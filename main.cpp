@@ -7,12 +7,14 @@
 #include <cmath>
 #include <list>
 #include <limits.h>
+#include <set>
+#include <deque>
 using namespace std;
 class Vertex;
 
 class Edge{
 public:
-    int weight = INT_MAX;
+    int weight = 1;
     string label;
     Vertex* vertex;
     Edge(string label, Vertex* v){
@@ -23,9 +25,12 @@ public:
 
 class Vertex{
 public:
+    int distance = INT_MAX;
     int id;
     string value;
+    string prevLabel;
     string discovered = "undiscovered";
+    Vertex* prev;
     list<Edge*> adjList;
 
     Vertex(int id){
@@ -60,11 +65,44 @@ public:
 
 };
  
- 
+ /*
+  Function to find shortest path between the start node and every other node until
+  the destination node is marked discovered -- essentially a custom Djikstra's algorithm for
+  my graph 
+ */
+ void findExit(Graph* g, int src, int dest, set<Vertex*>* visited){
+    set<Vertex*> unvisited;
+    Vertex* currentNode = g->Vertices[src];
+    currentNode->distance = 0;
+    while(g->Vertices[dest]->discovered != "Visited"){
+        // Add unvisited vertices of the current node to the unvisited set
+        for(Edge* i: currentNode->adjList){
+            if(i->vertex->discovered != "Visited"){
+                unvisited.emplace(i->vertex);
+            }
+        }
+
+        for(Edge* i: currentNode->adjList){
+            if(currentNode->distance + i->weight < i->vertex->distance){
+                i->vertex->distance = currentNode->distance + i->weight;
+                i->vertex->prev = currentNode;
+            }
+        }
+        currentNode->discovered = "Visited";
+        visited->emplace(currentNode);
+        unvisited.erase(currentNode);
+        currentNode = *unvisited.begin();
+        for(Vertex* i: unvisited){
+            if(i->distance < currentNode->distance){
+                currentNode = i;
+            }
+        }
+    }
+ };
 
 int main() {
 	// stream object to hold input from file for sanitation
-	vector<char> answer;
+	set<Vertex*> answer;
 	stringstream ostringStream;
 	string line;
 	ifstream inputFile;
@@ -88,8 +126,14 @@ int main() {
 	string data;
 	ostringStream >> mazeCount;
 
-	// main loop
+    // Opening the output file
+    // FILE IS OPENED IN APPEND MODE AS A PRECAUTION -- OUTPUT FILE SHOULD BE
+    // AN EMPTY FILE TO AVOID ANY OUTPUT FORMAT ERRORS
+    outputFile.open("output.txt", ios_base::app);
+
+	// main loop    
 	for (int i = 1; i <= mazeCount; i++) {
+        deque<string> path;
         cout << "Starting Maze " << i << '\n';
 		while (getline(inputFile, line))
 		{
@@ -167,32 +211,49 @@ int main() {
             cout << "Vertex " << x->id << " has value " << x->value << '\n';
         }
         */
+        
+        findExit(g, start, end, &answer);
+
+        // At this point, every node should have a shortest path from the start now
+        // and every node should have its pointer set to a proper previous node 
+        // we can then set a node pointer to our destination node and traverse
+        // backwards until we hit the start node
+        Vertex* travNode = g->Vertices[end];
+        Vertex* next;
+        while(travNode->id != start){
+            next = travNode;
+            travNode = travNode->prev;
+
+            for(Edge* i: travNode->adjList){
+                if(i->vertex->id == next->id){
+                    path.emplace_front(i->label);
+                }
+            }
+
+        }
+
+        /*
+        //UNCOMMENT THIS CHUNK OF CODE TO READ THE EXIT PATH IN CONSOLE BEFORE WRITING TO FILE
+        cout << "Start: " << start << " End: " << end << endl;
+        cout << "Exit Path: ";
+        for(string i: path){
+            cout << i << " ";
+        }
+        */
+
+
+        // writing the path to the output file 
+        for(string i: path){
+            outputFile << i << " ";
+        }
+        outputFile << '\n';
+        path.empty();
+        answer.empty();
         delete g;
         
 	}
 
-    /* 
-    this chunk of code checks to see if output.txt is an empty file
-    if it is empty, then it creates an output file stream to it
-    otherwise it creates a new temporary file, deletes output
-    and renames temp to output - this is to make sure we are writing to a clean output.txt
-    that doesn't have information from a previous run of the code
-    */
-    inputFile.open("output.txt");
-    if(inputFile.peek() == std::ifstream::traits_type::eof()){
-        inputFile.close();
-        outputFile.open("output.txt");
-    }else{
-        inputFile.close();
-        outputFile.open("temp.txt");
-        remove("output.txt");
-        outputFile.close();
-        rename("temp.txt", "output.txt");
-        outputFile.open("output.txt");
-    }
-    
-    // write results to the output file and close it
-  
+
     outputFile.close();
 
     
