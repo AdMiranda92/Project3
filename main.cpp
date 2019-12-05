@@ -6,11 +6,13 @@
 #include <algorithm>
 #include <cmath>
 #include <list>
+#include <limits.h>
 using namespace std;
 class Vertex;
 
 class Edge{
 public:
+    int weight = INT_MAX;
     string label;
     Vertex* vertex;
     Edge(string label, Vertex* v){
