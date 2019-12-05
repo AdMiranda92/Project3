@@ -7,26 +7,36 @@
 #include <cmath>
 #include <list>
 using namespace std;
+class Vertex;
+
+class Edge{
+public:
+    string label;
+    Vertex* vertex;
+    Edge(string label, Vertex* v){
+        this->label = label;
+        vertex = v;
+    }
+};
 
 class Vertex{
 public:
-
     int id;
     string value;
     string discovered = "undiscovered";
-    list<Vertex*> adjList;
+    list<Edge*> adjList;
 
     Vertex(int id){
         this->id = id;
     }
 
-    void addEdge(Vertex* source){
-        for(Vertex* i: this->adjList){
-            if(i->id == source->id){
+    void addEdge(Vertex* source, string label){
+        for(Edge* i: this->adjList){
+            if(i->vertex->id == source->id){
                 return;
             }
         }
-        this->adjList.push_front(source);
+        this->adjList.push_front(new Edge(label, source));
     }
 };
 
@@ -42,9 +52,8 @@ public:
         }
     }
 
-    void addEdge(int src, int dest){
-        cout << "Adding Edge Between " << src << " and " << dest << '\n';
-        Vertices[src]->addEdge(Vertices[dest]);
+    void addEdge(int src, int dest, string label){
+        Vertices[src]->addEdge(Vertices[dest], label);
     }
 
 };
@@ -53,34 +62,34 @@ public:
 
 int main() {
 	// stream object to hold input from file for sanitation
-	std::vector<char> answer;
-	std::stringstream ostringStream;
-	std::string line;
-	std::ifstream inputFile;
-	std::ofstream outputFile;
+	vector<char> answer;
+	stringstream ostringStream;
+	string line;
+	ifstream inputFile;
+	ofstream outputFile;
 	inputFile.open("input.txt", std::ios::in);
 
 	
 	if (inputFile.is_open()) {
-		std::cout << "File successfully opened - continuing program" << std::endl;
-		std::getline(inputFile, line);
+		cout << "File successfully opened - continuing program" << endl;
+		getline(inputFile, line);
 		ostringStream.str(line);
 	}
 	else {
-		std::cout << "File not found" << std::endl;
+		cout << "File not found" << endl;
 		exit(EXIT_FAILURE);
 	}
 
 
 	int  mazeCount, levels, rows, columns;
 	int trackx, tracky, trackz;
-	std::string data;
+	string data;
 	ostringStream >> mazeCount;
 
 	// main loop
 	for (int i = 1; i <= mazeCount; i++) {
         cout << "Starting Maze " << i << '\n';
-		while (std::getline(inputFile, line))
+		while (getline(inputFile, line))
 		{
 			if (line == "") { continue; } // Skip blank line
 			ostringStream.clear();
@@ -96,14 +105,14 @@ int main() {
 
         // get the starting vertex
 		ostringStream.clear();
-		std::getline(inputFile, line);
+		getline(inputFile, line);
 		ostringStream.str(line);
 		ostringStream >> trackz >> trackx >> tracky;
 		int start = (trackz*(rows*columns)) + (trackx*rows) + tracky;
 
         // get the ending vertex
 		ostringStream.clear();
-		std::getline(inputFile, line);
+		getline(inputFile, line);
 		ostringStream.str(line);
 		ostringStream >> trackz >> trackx >> tracky;
         int end = (trackz*(rows*columns)) + (trackx*rows) + tracky;
@@ -122,37 +131,36 @@ int main() {
 
         // connect all vertices together with their proper edges
         for(Vertex* x: g->Vertices){
-            cout << "Adding edges for vertex " << x->value << '\n';
              if(x->value[0] == '1'){
-                 g->addEdge(x->id, x->id - columns);
+                 g->addEdge(x->id, x->id - columns, "N");
             }if(x->value[1] == '1'){
-                g->addEdge(x->id, x->id+1);
+                g->addEdge(x->id, x->id+1, "E");
             }if(x->value[2] == '1'){
-                g->addEdge(x->id, x->id + columns);
+                g->addEdge(x->id, x->id + columns, "S");
             }if(x->value[3] == '1'){
-                g->addEdge(x->id, x->id-1);
+                g->addEdge(x->id, x->id-1, "W");
             }if(x->value[4] == '1'){
-                g->addEdge(x->id, x->id + (columns*rows));
+                g->addEdge(x->id, x->id + (columns*rows), "U");
             }if(x->value[5] == '1'){
-                g->addEdge(x->id, x->id - (columns*rows));
+                g->addEdge(x->id, x->id - (columns*rows), "D");
             }
         }
 
         /*
-        UNCOMMENT THIS CHUNK OF CODE TO SEE THE EDGES BETWEEN VERTICES
-        THIS WILL PRINT A LOT OF INFORMATION TO THE CONSOLE
+        // UNCOMMENT THIS CHUNK OF CODE TO SEE THE EDGES BETWEEN VERTICES
+        // THIS WILL PRINT A LOT OF INFORMATION TO THE CONSOLE
         for(Vertex* x: g->Vertices){
             cout << "Vertex " << x->id << " connects to: ";
-            for(Vertex *z: x->adjList){
-                cout << z->id << " -> ";
+            for(Edge *z: x->adjList){
+                cout << z->label << " " << z->vertex->id << " -> ";
             }
             cout << '\n';
         }
         */
 
         /*
-        UNCOMMENT THIS CHUNK OF CODE TO VERIFY THAT EACH VERTEX IN EACH MAZE
-        WAS ASSIGNED ITS PROPER STRING VALUE: THIS WILL PRINT A LOT OF INFORMATION TO THE CONSOLE
+        // UNCOMMENT THIS CHUNK OF CODE TO VERIFY THAT EACH VERTEX IN EACH MAZE
+        // WAS ASSIGNED ITS PROPER STRING VALUE: THIS WILL PRINT A LOT OF INFORMATION TO THE CONSOLE
         for(Vertex* x: g->Vertices){
             cout << "Vertex " << x->id << " has value " << x->value << '\n';
         }
